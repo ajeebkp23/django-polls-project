@@ -1,5 +1,6 @@
 from django.shortcuts import render, get_object_or_404
 from django.http import HttpResponse, HttpResponseRedirect
+from django.utils import timezone
 from django.urls import reverse
 from django.views import generic
 from polls.models import Question
@@ -11,12 +12,26 @@ class IndexView(generic.ListView):
 
     def get_queryset(self):
         """Return the last five published questions."""
-        return Question.objects.order_by('-pub_date')[:5]
-
+        qs = Question.objects.filter(
+            pub_date__lte=timezone.now()
+        )[:5]
+        recent_ids = qs.values_list('pk',flat=True)
+        filter_qs = Question.objects.order_by('-pub_date').filter(pk__in=recent_ids)
+        return filter_qs 
 
 class DetailView(generic.DetailView):
     model = Question
     template_name = 'polls/detail.html'
+
+    def get_queryset(self):
+        """Return the last five published questions."""
+        qs = Question.objects.filter(
+            pub_date__lte=timezone.now()
+        )[:5]
+        recent_ids = qs.values_list('pk',flat=True)
+        filter_qs = Question.objects.order_by('-pub_date').filter(pk__in=recent_ids)
+        return filter_qs 
+
 
 
 class ResultsView(generic.DetailView):
